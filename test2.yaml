@@ -1,0 +1,12 @@
+Data Structures:
+  - Name: Laptop
+    Course: abc
+    Content:
+      - Binary Tree
+      - BST
+      - Generic Tree
+  - Name: Monitor
+    Topics:
+      - BFS
+      - DFS
+      - Topological Sort
