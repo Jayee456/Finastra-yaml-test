@@ -1,0 +1,1493 @@
+# Default values for liq_helm.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: nginx
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+# autoscaling:
+#   enabled: false
+#   minReplicas: 1
+#   maxReplicas: 100
+#   targetCPUUtilizationPercentage: 80
+#   # targetMemoryUtilizationPercentage: 80
+
+global:
+  ingress:
+    enabled: true
+    className: ""
+    annotations: #{}
+      kubernetes.io/ingress.class: # Static/compute Value respective to ENV
+      # kubernetes.io/tls-acme: "true"
+    hosts:
+      - host: # Static/compute Value respective to ENV
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+    tls: #[]
+    - secretName: #le-167-qa-private #[le-11c-dmo-private, le-167-qa-private]
+      hosts:
+        - # Static/compute Value respective to ENV
+
+  arguments:
+    intralinks: -UID:THOMAS 
+    empushalloc: -processName:ALLOC01 -UID:LIQ_API
+    empushworker: -processName:EMP01 -UID:LIQ_API
+    eventpuballoc: -serverType:EVPALLOC -UID:TRUSER01
+    eventpubworker: -serverType:EVPWORKER  -processName:EMP01 -UID:TRUSER02
+    essettlement: -UID:LIQ_API 
+    essence: -UID:LIQ_API -serverType:ESSENCE -svcname ESSENCECUST -serviceType:essenceGL -seq 2
+    ttequeue: -UID:TTEQ01Z1 -region:ZONE1 -svcname TTEQZ1 -seq 01
+    audithandler: -UID:THOMAS
+    dataextract: -UID:THOMAS
+    archival: -UID:TRUSER02 -PObject:DEAL -PName:ARCHIVE
+    remoteops:  -UID:LIQ_API
+    sessionclean: -UID:LIQ_API
+    faxmailalloc: -UID:LIQ_API -J-DprocessName=Allocator
+    faxmailworker: -UID:LIQ_API -UID:LIQ_API -processName=Allocator  -J-DprocessName=Allocator
+    dtcc: -rgn:ZONE1
+    
+  keycloak:
+    args: ["start-dev"]
+    customEnv: #[]
+    - name: KEYCLOAK_ADMIN
+      value: admin
+    - name: KEYCLOAK_ADMIN_PASSWORD
+      value: admin
+    - name: PROXY_ADDRESS_FORWARDING
+      value: "true"
+    - name: KC_PROXY
+      value: edge 
+    - name: JAVA_OPTS_APPEND
+      value: -Xms1024m -Xmx4096m
+      
+  strategy: #{}
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 1
+
+  image:
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: # Dynamic Value need to supply from SNOW
+  imagePullSecrets: #[]
+  - name: # Static/compute Value respective to ENV
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  affinity: {}
+
+  filemount: 
+    enabled: false            
+
+  Config: #{}
+    enabled : false
+    volumeMounts:
+    - name: liq-config
+      mountPath: /usr/local/customconf
+    volumes:
+    - name: liq-config
+      azureFile:
+        shareName: loaniq-deployment/p32q1670252k001/cppconfdir/confdir
+        secretName: p32q1670252y001-sa
+        readOnly: false
+  ConfigMap:
+    enabled: true
+    volumeMounts:
+    - name: dbconfig-ini
+      mountPath: /usr/local/customconf/conf/dbconfig.ini
+      subPath: dbconfig.ini
+    - name: log4j-properties
+      mountPath: /usr/local/customconf/jrconf/log4j.properties.xml
+      subPath: log4j.properties.xml
+    genericConfigMap: 
+      context.xml: |
+        <?xml version='1.0' encoding='utf-8'?>
+        <!--
+          Licensed to the Apache Software Foundation (ASF) under one or more
+          contributor license agreements.  See the NOTICE file distributed with
+          this work for additional information regarding copyright ownership.
+          The ASF licenses this file to You under the Apache License, Version 2.0
+          (the "License"); you may not use this file except in compliance with
+          the License.  You may obtain a copy of the License at
+
+              http://www.apache.org/licenses/LICENSE-2.0
+
+          Unless required by applicable law or agreed to in writing, software
+          distributed under the License is distributed on an "AS IS" BASIS,
+          WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+          See the License for the specific language governing permissions and
+          limitations under the License.
+        -->
+        <!-- The contents of this file will be loaded for each web application -->
+        <Context>
+
+            <!-- Default set of monitored resources. If one of these changes, the    -->
+            <!-- web application will be reloaded.                                   -->
+            <WatchedResource>WEB-INF/web.xml</WatchedResource>
+            <WatchedResource>${catalina.base}/conf/web.xml</WatchedResource>
+
+            <!-- Uncomment this to disable session persistence across Tomcat restarts -->
+            <!--
+            <Manager pathname="" />
+            -->
+
+            <!-- Uncomment this to enable Comet connection tacking (provides events
+                on session expiration as well as webapp lifecycle) -->
+            <!--
+            <Valve className="org.apache.catalina.valves.CometConnectionManagerValve" />
+            -->
+          <Parameter
+              name="JSqlAccessPropertyFile"
+              override="false"
+              value="${server.dir}/jrconf/JSqlAccessProperties.xml"/>
+            <JarScanner scanClassPath="false" /> 
+        <Resource
+            auth="Container"
+            defaultAutoCommit="false"
+          closeMethod="close"
+          initialSize="40" 
+          maxTotal="200" 
+          maxIdle="20" 
+          maxWaitMillis="-1"
+            name="jdbc/LiqCommonPool"
+            type="javax.sql.DataSource"
+            driverClassName="oracle.jdbc.OracleDriver"
+            url= # Static/compute Value respective to CUSTOMER and ENV
+            username= # Static/compute Value respective to CUSTOMER and ENV
+            password= # Static/compute Value respective to CUSTOMER and ENV
+            connectionInitSqls="ALTER SESSION SET NLS_TIMESTAMP_FORMAT = 'YYYY-MM-DD HH24.MI.SS.FF6';ALTER SESSION SET NLS_DATE_FORMAT = 'YYYY-MM-DD HH24.MI.SS'"
+          />
+
+        </Context>
+        
+      dbconfig.ini: |
+        [Database]
+        LogFileName=${catalina.home}/jrconf/log4j.xml
+        JSqlAccessDataSourceCommon= java:comp/env/jdbc/LiqCommonPool
+        JSqlAccessJdbcClass= oracle.jdbc.OracleDriver
+        JSqlAccessJdbcUrl= # Static/compute Value respective to CUSTOMER and ENV
+        DBInitSql= ALTER SESSION SET CURRENT_SCHEMA = {{ DBSCHEMA }} # Static/compute Value respective to ENV
+        Userid   = # Static/compute Value respective to CUSTOMER and ENV
+        Password = # Static/compute Value respective to CUSTOMER and ENV
+        Alias    = # Static/compute Value respective to CUSTOMER and ENV
+        Schema   = # Static/compute Value respective to CUSTOMER and ENV
+        XML Subdirectory = /opt/misys/loaniq/server/xml/oraclexml.jar
+        Always Connect with Default ID = Yes
+        NodeName = CPP
+        Profile  = DEV
+
+        [Logger]
+        Max Records           = 3000000
+        Dump Threads          = 3
+
+        [BATCH]
+        Enablelog4cxx = Y
+        
+        [Kubernetes]
+        cppimage = p32q1670151t001.azurecr.io/liq/cppbatch:{{ TAG }} # Static/compute Value respective to CUSTOMER and ENV
+        javaimage = p32q1670151t001.azurecr.io/liq/javabatch:{{ TAG }} # Static/compute Value respective to CUSTOMER and ENV
+        imagepullsecrect = p32q1670151t001-acr # Static/compute Value respective to CUSTOMER and ENV
+        imagePullPolicy = IfNotPresent
+        namespace = liqdev # Static/compute Value respective to CUSTOMER and ENV
+        envname = {{ HELM }} # Static/compute Value respective to CUSTOMER and ENV
+        configmap.name = {{ HELM }}-bcpservice # Static/compute Value respective to ENV
+        configmap.dbconfig.volumename = dbconfig-ini
+        configmap.dbconfig.volumemount = dbconfig-ini
+        configmap.dbconfig.filename = dbconfig.ini
+        configmap.dbconfig.defaultmode = 511
+        configmap.dbconfig.filepath = /usr/local/customconf/conf/
+
+        configmap.odbc.volumename = odbc-ini
+        configmap.odbc.volumemount = odbc-ini
+        configmap.odbc.filename = odbc.ini
+        configmap.odbc.defaultmode = 511
+        configmap.odbc.filepath = /usr/local/customconf/conf/
+
+        configmap.odbcinst.volumename = odbcinst-ini
+        configmap.odbcinst.volumemount = odbcinst-ini
+        configmap.odbcinst.filename = odbcinst.ini
+        configmap.odbcinst.defaultmode = 511
+        configmap.odbcinst.filepath = /usr/local/customconf/conf/
+
+        configmap.log4j.volumename = log4j-prop
+        configmap.log4j.volumemount = log4j-prop
+        configmap.log4j.filename = log4j.properties.xml
+        configmap.log4j.defaultmode = 511
+        configmap.log4j.filepath = /usr/local/customconf/conf/
+
+        configmap.log4cxx.volumename = log4cxx-xml
+        configmap.log4cxx.volumemount = log4cxx-xml
+        configmap.log4cxx.filename = log4cxx.xml
+        configmap.log4cxx.defaultmode = 511
+        configmap.log4cxx.filepath = /usr/local/customconf/conf/
+
+        toleration.key = mem
+        toleration.operator = Equal
+        toleration.value = true
+        toleration.effect = NoSchedule
+
+        pv.persistentStorage = {{ HELM }}-bcpservice-pv # Static/compute Value respective to ENV
+        pv.persistentVolumeClaim = {{ HELM }}-bcpservice-pvc # Static/compute Value respective to ENV
+        pv.Path = /opt/misys/loaniq/server/ls2mail
+
+      LIQSETENV_cpp: |
+        # !/bin/bash
+        # A command file named LIQSETENV_XXXXXXXX.CMD, where XXXXXXXX is the computer name of the LOAN IQ server,
+        # must exist in the same directory as RUNLIQ.CMD (typically the server directory).   This file should
+        # set the following machine specific environment variables...
+        #
+        #     LIQUserCount  - this controls the number of SQLACCES processes to start
+        #
+        #     LIQBPRCount   - this controls the number of BPR processes to start
+        #
+        LIQUserCount=100
+        LIQBPRCount=8
+        LIQ_API_User=LIQ_API
+        LIQ_RunTomcat=N
+        LIQNPRCount=2
+        LIQ_RunNCP=Y
+        LIQ_RunSessionIdCleanup=Y
+        LIQ_RunModuleServices=N
+
+        # Set number of instances of ttequeue.exe to be run for each zone
+        LIQTteqCount_ZONE1=1
+        LIQTteqCount_ZONE2=1
+        LIQTteqCount_ZONE3=1
+
+      odbc.ini: |
+        [{{ DBSID }}] # Static/compute Value respective to ENV
+        Application Attributes = T
+        Attributes = W
+        BatchAutocommitMode = IfAllSuccessful
+        BindAsFLOAT = F
+        CloseCursor = F
+        DisableDPM = F
+        DisableMTS = T
+        Driver = Oracle19C
+        DSN = {{ DBSID }} # Static/compute Value respective to ENV
+        EXECSchemaOpt =
+        EXECSyntax = T
+        Failover = T
+        FailoverDelay = 10
+        FailoverRetryCount = 10
+        FetchBufferSize = 64000
+        ForceWCHAR = F
+        Lobs = T
+        Longs = T
+        MaxLargeData = 0
+        MetadataIdDefault = F
+        QueryTimeout = T
+        ResultSets = T
+        ServerName = {{ DBIP }}:{{ DBPORT }}/{{ DBSID }} # Static/compute Value respective to ENV
+        SQLGetData extensions = F
+        Translation DLL =
+        Translation Option = 0
+        DisableRULEHint = T
+        UserID =
+        StatementCache=F
+        CacheBufferSize=20
+        UseOCIDescribeAny=F
+        MaxTokenSize=8192
+        Database = {{ DBSID }} # Static/compute Value respective to ENV
+        Port = {{ DBPORT }} # Static/compute Value respective to ENV
+
+      odbcinst.ini: |
+        [Oracle19c]
+        Description    = Oracle19c
+        Driver         = /usr/lib/oracle/19.3/client64/lib/libsqora.so.19.1
+        Setup          = /usr/lib/oracle/19.3/client64/lib/libsqora.so.19.1
+        Setup64        = /usr/lib/oracle/19.3/client64/lib/libsqora.so.19.1
+        CPTimeout      =
+        CPReuse        =
+        FileUsage      = 1
+
+        [ODBC]
+        TraceFile = /tmp/sql.log
+        Trace = No
+
+        [db2_odbc_driver]
+        Description = IBM DB2 ODBC driver (64-bit)
+        Driver      = /ODBC/odbc_cli/clidriver/lib/libdb2o.so
+        FileUsage   = 1
+        DontDLClose = 1
+      
+      log4j.properties.xml: |
+        <?xml version="1.0" encoding="UTF-8" ?>
+
+        <!-- <Configuration> -->
+        <Configuration packages="pl.tkowalcz.tjahzi.log4j2">   
+        <Appenders>
+                        <RollingFile name="logfile" fileName="/opt/misys/loaniq/server/logs/LoanIQ_${env:HOSTNAME}.log"
+                                filePattern="logs/LoanIQ-%d{MM-dd-yyyy}-%i.log.gz">
+                                <PatternLayout>
+                                        <Pattern>%d{ISO8601} [%t] %p: %m%n</Pattern>
+                                </PatternLayout>
+                                <Policies>
+                                        <TimeBasedTriggeringPolicy />
+                                        <SizeBasedTriggeringPolicy size="50MB"/>
+                                </Policies>
+                                <DefaultRolloverStrategy max="2"/>
+                        </RollingFile>
+                        <RollingFile name="pidPrefixFile" fileName="/opt/misys/loaniq/server/logs/${sys:pidPrefixLog}"
+                                filePattern="logs/${sys:pidPrefixLog}-%d{MM-dd-yyyy}-%i.log.gz">
+                                <PatternLayout>
+                                        <Pattern>%d{ISO8601} [%t] {%c} %p: %m%n</Pattern>
+                                </PatternLayout>
+                                <Policies>
+                                        <TimeBasedTriggeringPolicy />
+                                        <SizeBasedTriggeringPolicy size="100MB"/>
+                                </Policies>
+                                <DefaultRolloverStrategy max="20"/>
+                        </RollingFile>
+
+                        <Http name="Http" url="http://localhost:8090/Jackrabbit/logclient">
+                                  <Property name="X-Java-Runtime" value="$${java:runtime}" />
+                                  <Property name="Cookie" value="${ctx:log4jclientvalue}" />
+                                  <JsonLayout properties="true"/>
+                        </Http>
+                        <Loki name="Loki" bufferSizeMegabytes="64">
+                        <host>loki-grafana-loki-distributor.monitoring.svc.cluster.local</host>
+                        <port>3100</port>
+                        <ThresholdFilter level="ALL"/>
+                        <PatternLayout> 
+                        <Pattern>"%d{yyyy-MM-dd_HH:mm:ss.SSS} [%t] %X{jSession} | %X{userId} %c %p: %m%n"</Pattern>
+                        </PatternLayout>
+                        <Header name="X-Scope-OrgID" value="Finastra"/>
+                        <Label name="namespace" value="liqdev"/>
+                        <Label name="helm_name" value="{{ HELM }}"/> # Static/compute Value respective to ENV
+                        <Label name="app_name" value="${sys:logger.appid}"/>
+                         <LogLevelLabel>log_level</LogLevelLabel>
+                         </Loki>            
+                        
+
+                </Appenders>
+                <Loggers>
+
+                        <Asynclogger name="exception.logger" level="warn">
+                        </Asynclogger>
+
+                        <Asynclogger name="com.misys.liq.infrastructure" level="warn">
+                        </Asynclogger>
+
+                        <Asynclogger name="com.misys.liq.j2sql" level="warn">
+                        </Asynclogger>
+
+                        <Asynclogger name="com.sxsy.smtj.utilities.ReflectionUtility"
+                                level="warn">
+                        </Asynclogger>
+
+                        <Asynclogger name="com.misys.liq.j2sql.comm" level="warn">
+                        </Asynclogger>
+
+                        <Asynclogger name="Profile" level="warn">
+                        </Asynclogger>
+
+                        <Asynclogger name="com.misys.liq.LoanIQ" level="warn">
+                        </Asynclogger>
+
+                        <Asynclogger name="com.misys.liq.common" level="warn">
+                        </Asynclogger>
+
+                        <Asynclogger name="com.misys.liq.j2sql.XMLServletConnection"
+                                level="warn">
+                        </Asynclogger>
+
+                        <Asynclogger name="xml.request.logger"
+                                level="warn">
+                        </Asynclogger>
+
+                        <Asynclogger name="response"
+                                level="warn">
+                        </Asynclogger>
+
+                        <Asynclogger name="snapshot.logger"
+                                level="warn">
+                        </Asynclogger>
+
+                        <Asynclogger name="audit-trail"
+                                level="warn">
+                        </Asynclogger>
+
+                        <Asynclogger name="com.sxsy.smtj"
+                                level="warn">
+                        </Asynclogger>
+
+                        <Asynclogger name="walkback.log"
+                                level="warn">
+                        </Asynclogger>
+
+                        <Asynclogger name="row.logger"
+                                level="warn">
+                        </Asynclogger>
+
+                        <AsyncRoot level="debug">
+                                <AppenderRef ref="pidPrefixFile"/>
+                                <AppenderRef ref="Loki"/>
+                        </AsyncRoot>
+                </Loggers>
+
+        </Configuration>
+    
+      log4j.xml: |
+        <?xml version="1.0" encoding="UTF-8" ?>
+        <!-- <Configuration> -->
+        <Configuration packages="pl.tkowalcz.tjahzi.log4j2">  
+          <Appenders>
+            
+            <Console name="console" target="System.out">
+              <PatternLayout
+                pattern="%d{ABSOLUTE} [%t] %p: %m%n" />
+            </Console>
+            
+            <RollingFile name="file" fileName="/opt/misys/loaniq/server/logs/${sys:jr.logfilename}_${env:HOSTNAME}.log"
+              filePattern="${sys:jr.logfilename}-%d{MM-dd-yyyy}-%i.log">
+              <PatternLayout>
+                <Pattern>"%d{yyyy-MM-dd_HH:mm:ss.SSS} [%t] %X{jSession} | %X{userId} %c %p: %m%n"</Pattern>
+              </PatternLayout>
+              <Policies>
+                <TimeBasedTriggeringPolicy />
+                <SizeBasedTriggeringPolicy size="5MB" />
+              </Policies>
+              <DefaultRolloverStrategy max="10" />
+            </RollingFile>		
+            <Loki name="Loki" bufferSizeMegabytes="64">
+            <host>loki-grafana-loki-distributor.monitoring.svc.cluster.local</host>
+            <port>3100</port>
+            <ThresholdFilter level="ALL"/>
+            <PatternLayout> 
+            <Pattern>"%d{yyyy-MM-dd_HH:mm:ss.SSS} [%t] %X{jSession} | %X{userId} %c %p: %m%n"</Pattern>
+            </PatternLayout>
+            <Header name="X-Scope-OrgID" value="Finastra"/>
+            <Label name="namespace" value="liqdev"/>
+            <Label name="helm_name" value="{{ HELM }}"/> # Static/compute Value respective to ENV
+            <Label name="app_name" value="JackRabbit"/>
+             <LogLevelLabel>log_level</LogLevelLabel>
+             </Loki>
+
+          </Appenders>
+          
+            <Loggers>
+
+            <AsyncRoot level="info">
+              <AppenderRef ref="file"/>
+               <AppenderRef ref="Loki"/>
+            </AsyncRoot>
+            
+          </Loggers>
+          
+        </Configuration>
+
+      log4j_api.xml: |
+        <?xml version="1.0" encoding="UTF-8" ?>
+        <!-- <Configuration> -->
+        <Configuration packages="pl.tkowalcz.tjahzi.log4j2">
+
+
+        <Appenders>
+            <Console name="console" target="System.out">
+              <PatternLayout pattern="%d{ISO8601} [%t] %-5p %c %x - %m%n"/>
+            </Console>
+            
+            <RollingFile name="filelog" fileName="/opt/misys/loaniq/server/logs/${sys:api.logfilename}_${env:HOSTNAME}.log"
+                        filePattern="${sys:api.logfilename}-%d{MM-dd-yyyy}-%i.log.gz">
+              <PatternLayout>
+                <Pattern>%d{ISO8601} [%t] %-5p %c %x - %m%n</Pattern>
+              </PatternLayout>
+              <Policies>
+                <TimeBasedTriggeringPolicy />
+                <SizeBasedTriggeringPolicy size="5MB"/>
+              </Policies>
+              <DefaultRolloverStrategy max="10"/>
+            </RollingFile>
+            <Loki name="Loki" bufferSizeMegabytes="64">
+            <host>grafana-loki-distributor.monitoring.svc.cluster.local</host>
+            <port>3100</port>
+            <ThresholdFilter level="ALL"/>
+            <PatternLayout> 
+            <Pattern>"%d{yyyy-MM-dd_HH:mm:ss.SSS} [%t] %X{jSession} | %X{userId} %c %p: %m%n"</Pattern>
+            </PatternLayout>
+            <Header name="X-Scope-OrgID" value="Finastra"/>
+            <Label name="namespace" value="liqdev"/>
+            <Label name="helm_name" value="{{ HELM }}"/> # Static/compute Value respective to ENV
+            <Label name="app_name" value="APIServer"/>
+             <LogLevelLabel>log_level</LogLevelLabel>
+             </Loki>            
+          </Appenders>
+          <Loggers>
+          
+          <Logger name="com.misys.liq" level="info"></Logger>
+          
+            <Root level="info">
+              <AppenderRef ref="file"/>
+               <AppenderRef ref="Loki"/>
+            </Root>
+          </Loggers>
+        </Configuration>
+
+      log4j_DTCC.xml: |
+        <?xml version="1.0" encoding="UTF-8" ?>
+        <Configuration>
+
+        <!--   <appender name="console" class="org.apache.log4j.ConsoleAppender">
+            <param name="Target" value="System.out"/>
+            <layout class="org.apache.log4j.PatternLayout">
+              <param name="ConversionPattern" value="%d{ABSOLUTE} [%t] %p: %m%n"/>
+            </layout>
+          </appender>
+
+          <appender name="rolling_file" class="org.apache.log4j.RollingFileAppender">
+            <param name="File" value="DTCC_output.log" />
+            <param name="Append" value="true" />
+            <param name="MaxFileSize" value="2MB" />
+            <param name="MaxBackupIndex" value="1" />
+            <layout class="org.apache.log4j.PatternLayout">
+              <param name="ConversionPattern" value="%d{ABSOLUTE} [%t] %p: %m%n"/>
+            </layout>
+          </appender> -->
+          
+          <Appenders>
+            <Console name="console" target="System.out">
+              <PatternLayout
+                pattern="%d{ABSOLUTE} [%t] %p: %m%n" />
+            </Console>
+
+            <RollingFile name="rolling_file" fileName="/opt/misys/loaniq/server/logs/DTCC_output_${env:HOSTNAME}.log"
+              filePattern="DTCC_output-%d{MM-dd-yyyy}-%i.log.gz">
+              <PatternLayout>
+                <Pattern>%d{ABSOLUTE} [%t] %p: %m%n</Pattern>
+              </PatternLayout>
+              <Policies>
+                <TimeBasedTriggeringPolicy />
+                <SizeBasedTriggeringPolicy size="2MB"/>
+              </Policies>
+              <DefaultRolloverStrategy max="1"/>
+            </RollingFile>
+          </Appenders>
+          <Loggers>
+            <Root level="debug">
+              <AppenderRef ref="rolling_file"/>
+            </Root>
+          </Loggers>
+        </Configuration>
+
+      activemq.ini: |
+        AUDIT.JNDI_CONTEXT_TYPE=GEN
+        AUDIT.QUEUE_NAME=AuditQueue_1
+        AUDIT.JNDI_SETTINGS_PATH=/usr/local/customconf/jrconf/jndi.properties
+        AUDIT.JMS_PROVIDER_URL=tcp://{{ HELM }}-activemq:61616 # Static/compute Value respective to ENV
+        AUDIT.CONNECTION_FACTORY=ConnectionFactory
+        AUDIT.CONNECTION_FACTORY_TYPE=QUEUE
+        
+      jndi.properties: |
+        java.naming.factory.initial=org.apache.activemq.jndi.ActiveMQInitialContextFactory
+        java.naming.provider.url = tcp://{{ HELM }}-activemq:61616 # Static/compute Value respective to ENV
+      lchc_service_config.json: |
+        {"lchcServiceMetaData":[{
+          "name":"dealSync",
+          "type":"ABL",
+          "outboundMessagingType":"JMS",
+          "requestQueue":"dynamicQueues/dealSyncRequestQueue",
+          "responseQueue":"dynamicQueues/dealSyncResponseQueue",
+          "outboundTargetUrl":"NONE",
+          "outboundMessageFormat":"JSON",
+          "groupSizeOutbound":"100",
+          "groupSizeInbound":"100"
+        },
+        {
+          "name":"doubleSidedPosting",
+          "type":"ABL",
+          "outboundMessagingType":"JMS",
+          "requestQueue":"dynamicQueues/doublesideBorrowingBaseRequestQueue",
+          "responseQueue":"dynamicQueues/doublesideBorrowingBaseResponseQueue",
+          "outboundTargetUrl":"NONE",
+          "outboundMessageFormat":"JSON",
+          "groupSizeOutbound":"100",
+          "groupSizeInbound":"1"
+        },
+        {
+          "name":"loanBalance",
+          "type":"ABL",
+          "outboundMessagingType":"JMS",
+          "requestQueue":"dynamicQueues/loanBalanceRequestQueue",
+          "responseQueue":"dynamicQueues/loanBalanceResponseQueue",
+          "outboundTargetUrl":"NONE",
+          "outboundMessageFormat":"JSON",
+          "groupSizeOutbound":"100",
+          "groupSizeInbound":"1"
+        },
+        {
+          "name":"manualBorrowingBase",
+          "type":"ABL",
+          "outboundMessagingType":"JMS",
+          "requestQueue":"NONE",
+          "responseQueue":"dynamicQueues/manualBorrowingBaseResponseQueue",
+          "outboundTargetUrl":"NONE",
+          "outboundMessageFormat":"JSON",
+          "groupSizeOutbound":"1",
+          "groupSizeInbound":"1"
+        },
+        {
+          "name":"doubleSidedPostingAck",
+          "type":"ABL",
+          "outboundMessagingType":"JMS",
+          "requestQueue":"dynamicQueues/doubleSidedPostingAckRequestQueue",
+          "responseQueue":"NONE",
+          "outboundTargetUrl":"NONE",
+          "outboundMessageFormat":"JSON",
+          "groupSizeOutbound":"1",
+          "groupSizeInbound":"1"
+        },
+        {
+         "name":"loanBalanceAck",
+          "type":"ABL",
+          "outboundMessagingType":"JMS",
+          "requestQueue":"dynamicQueues/loanBalanceAckRequestQueue",
+          "responseQueue":"NONE",
+          "outboundTargetUrl":"NONE",
+          "outboundMessageFormat":"JSON",
+          "groupSizeOutbound":"1",
+          "groupSizeInbound":"1"
+        },
+        {
+         "name":"manualBorrowingBaseAck",
+          "type":"ABL",
+          "outboundMessagingType":"JMS",
+          "requestQueue":"dynamicQueues/manualBorrowingBaseAckRequestQueue",
+          "responseQueue":"NONE",
+          "outboundTargetUrl":"NONE",
+          "outboundMessageFormat":"JSON",
+          "groupSizeOutbound":"1",
+          "groupSizeInbound":"1"
+        }
+        ]}
+        
+      lchc_log.xml: |
+        <?xml version="1.0" encoding="UTF-8" ?>
+        <Configuration> 
+          <Appenders>
+                <RollingFile name="logfile" fileName="${sys:server.dir}/logs/LchcServer.log"
+                    filePattern="${sys:server.dir}/logs/LchcServer-%d{MM-dd-yyyy}-%i.log.gz">
+                    <PatternLayout>
+                        <Pattern>%d{ISO8601} [%t] %p: %m%n</Pattern>
+                    </PatternLayout>
+                    <Policies>
+                        <TimeBasedTriggeringPolicy />
+                        <SizeBasedTriggeringPolicy size="100MB"/>
+                    </Policies>
+                    <DefaultRolloverStrategy max="50"/>
+                </RollingFile>
+                
+                <RollingFile name="LOGFILE_FAC_BB" fileName="${sys:server.dir}/logs/LOGFILE_FAC_BB_ERROR.log"
+                    filePattern="${sys:server.dir}/logs/LOGFILE_FAC_BB_ERROR-%d{MM-dd-yyyy}-%i.log.gz">
+                    <PatternLayout>
+                        <Pattern>%d{ISO8601} [%t] %p: %m%nn</Pattern>
+                    </PatternLayout>
+                    <Policies>
+                        <TimeBasedTriggeringPolicy />
+                        <SizeBasedTriggeringPolicy size="10MB"/>
+                    </Policies>
+                    <DefaultRolloverStrategy max="50"/>
+                </RollingFile>
+                        
+            </Appenders>
+            <Loggers>
+             <Logger name="LOGFILE_FAC_BB" level="debug" additivity="false">
+                <appender-ref ref="LOGFILE_FAC_BB" />
+            </Logger>
+            
+            <Root level="info">
+                    <AppenderRef ref="logfile"/>
+            </Root>
+            </Loggers>       
+
+        </Configuration>
+      lchcApp.ini: |
+        *------------------------------------------------------------------------------
+        * Sample INI file for LOAN IQ CME Integration
+        *
+        * $Workfile:   ls2app.cli  $
+        * $Revision:   53.0  $  $Date:   31 May 2001 11:26:44  $
+        * $Author:   MUNITRI  $
+        *
+        * The following parameters should be replaced in this file...
+        *
+        *   <ADMCP1> -- Primary Load Balancer
+        *   <ADMCP2> -- Secondary Load Balancer
+        *
+        *------------------------------------------------------------------------------
+
+        [Rest Services]
+        Enabled = Y
+        XQueryResult Json On Result Node = Y
+        RS_Port = 8084
+        RS_Packages_To_Scan = com.misys.liq.restservices.jaxrs,com.misys.liq.exception
+
+        [DB PROPERTIES]
+        DB_DATA_SOURCE=jdbc/LiqCommonPool	
+        #DB_DATA_SOURCE=jdbc/LiqABL
+
+        [CME]
+        #CREATE_DEAL_URL=http://liq-server:8084/FusionLendingService/mapping/sequences/execute/CreateDeal_v2
+        #LEGAL_ENTITY_ID_LOOKUP=http://liq-server:8084/FusionLendingService/mapping/sequences/execute/Legal_Entity_ID_Lookup
+        #PRODUCT_TYPE_LOOKUP=http://liq-server:8084/FusionLendingService/mapping/sequences/execute/ProductType_Lookup
+        #APP_BRANCH_CODE_LOOKUP=http://liq-server:8084/FusionLendingService/mapping/sequences/execute/App_branch_code_Lookup
+        #PROCESS_CENTER_LOOKUP=http://liq-server:8084/FusionLendingService/mapping/sequences/execute/ProcessCenter_Lookup
+        #QUEUE_ACTIVITY_LOOKUP=http://liq-server:8084/FusionLendingService/mapping/sequences/execute/QueueActivity_Lookup
+        #PROCESS_GROUP_LOOKUP=http://liq-server:8084/FusionLendingService/mapping/sequences/execute/ProcessGroup_Lookup
+        #*CREATE_BORROWING_BASE=http://liq-server:8084/FusionLendingService/mapping/sequences/execute/Double_Side_Query_Test_SSH
+        #CREATE_BORROWING_BASE=http://localhost:8080/loaniqcentralhttpconnector/rest/mock/lhaloaniq/pass/borrowingBase
+        #*CREATE_BORROWING_BASE=http://localhost:8080/loaniqcentralhttpconnector/rest/mock/lhaloaniq/fail/borrowingBase
+        #*CREATE_BORROWING_BASE=http://localhost:8080/loaniqcentralhttpconnector/rest/mock/eslha/fail/borrowingBase
+        #COLLATERAL_TYPE_URL=http://<hostname>:<port>/FusionLendingService/mapping/sequences/execute/Collateral_Type_Lookup_EntID_Final
+        #http://liq-server:8084/FusionLendingService/mapping/sequences/execute/Collateral_Type_Lookup_EntID_Final
+        #LOAN_BALANCE=http://BLR2DEVLP0938:8080/abl/restApi/getFCN
+
+
+        [API Web Services]
+        #CREATE_BORROWING_BASE_FACILITY_INSERT=http://BLRSWLIQMT00029:8082/loaniqwebservice/restapi/createData/UnsecuredStandaloneBorrowingBase/Facility/controlNumber/
+        #CREATE_BORROWING_BASE_FACILTY_UPDATE=http://BLRSWLIQMT00029:8082/loaniqwebservice/restapi/actionOnData/UpdateFacilityBorrowingBase/Facility/controlNumber/
+        #CREATE_BORROWING_BASE_FACILTY_QUERY=http://BLRSWLIQMT00029:8082/loaniqwebservice/restapi/queryData/UnsecuredStandaloneBorrowingBase/Facility/controlNumber/
+        #REFRESH_CODE_TABLE=http://BLRSWLIQMT00029:8082/loaniqwebservice/restapi/RefreshAllCodeTable
+        EXECUTE_CREATE_UPDATE_UNSECURE_BB_SOAP=http://{{ HELM }}:8082/liq_apiWebService/api/liq # Static/compute Value respective to ENV
+
+        ; [IBM MQ CONFIGURATIONS]
+        ; JMSJNDICONTEXT = FS
+        ; BINDINGFILEDIRECTORY = FILE://C:/LOANIQ76/SERVER76
+        ; JMSQUEUEUSERNAME=MUSR_MQADMIN
+        ; JMSQUEUEPASSWORD=FINASTRA123$
+        ; JMSREQUESTQUEUENAME = DEALSYNCREQUESTQUEUE,DOUBLESIDEBORROWINGBASEREQUESTQUEUE,LOANBALANCEREQUESTQUEUE,DOUBLESIDEDPOSTINGACKREQUESTQUEUE,LOANBALANCEACKREQUESTQUEUE,MANUALBORROWINGBASEACKREQUESTQUEUE
+        ; JMSRESPONSEQUEUENAME = DEALSYNCRESPONSEQUEUE,DOUBLESIDEBORROWINGBASERESPONSEQUEUE,LOANBALANCERESPONSEQUEUE,MANUALBORROWINGBASERESPONSEQUEUE
+        ; JMSTIMEOUTMS = 1000
+        ; JMSQUEUECONNECTIONFACTORY = ABL
+
+        [ACTIVE MQ CONFIGURATIONS]
+        jmsJNDIContext = GEN
+        #JmsProviderURL = tcp://localhost:61616
+        #bindingFileDirectory = tcp://localhost:61616
+        jmsRequestQueueName = dynamicQueues/dealSyncRequestQueue,dynamicQueues/doublesideBorrowingBaseRequestQueue,dynamicQueues/loanBalanceRequestQueue,dynamicQueues/doubleSidedPostingAckRequestQueue,dynamicQueues/loanBalanceAckRequestQueue,dynamicQueues/manualBorrowingBaseAckRequestQueue
+        jmsResponseQueueName = dynamicQueues/dealSyncResponseQueue,dynamicQueues/doublesideBorrowingBaseResponseQueue,dynamicQueues/loanBalanceResponseQueue,dynamicQueues/manualBorrowingBaseResponseQueue
+        jmsTimeoutMS = 1000
+        jmsQueueConnectionFactory = QueueConnectionFactory
+        JmsProviderURL = tcp://{{ HELM }}-activemq:61616 # Static/compute Value respective to ENV
+        bindingFileDirectory = tcp://{{ HELM }}-activemq:61616 # Static/compute Value respective to ENV
+
+        [RETRY PARAMETERS]
+        *No.of attempts for Double Side posting service to successfully get response from CME
+        *No.of attempts for Double Side posting service to successfully update Facility Borrowing Base
+        RETRY=3
+
+        *Duration in milli-seconds after which the retry will be done
+        DURATION=5000
+
+        *Duration in seconds after which the retry will be done
+        QUEUE_TIMER=10
+
+        [Borrowing Base]
+        PRIMARY = PRIBB
+        SECONDARY = SHRBB
+
+        [STATIC CONFIG]
+        #User name should no be greater than 8 characters
+        EXTERNAL_USER = TRUSER07
+
+        #No. of tasks (Threads) to be created (Recommended - not more than 8)
+        TASKS = 7
+
+        #Service call switch (REST/SOAP)
+        CONTEXT=SOAP
+
+
+        #Duration in milli-seconds after which the retry will be done to Restart MQ
+        MQDURATION=5000
+      application.yml: |
+        spring:
+          scheduling:
+            enabled: true
+          cloud:
+            compatibility-verifier:
+              enabled: false
+          sleuth:
+            enabled: true
+            sampler:
+              probability: 1
+          zipkin:
+            base-url: http://{{ HELM }}-zipkin:9411/ # Static/compute Value respective to ENV
+            enabled: false
+
+        server:
+            port: 8080
+        logging:
+            level:
+                root: DEBUG
+                org.apache.tomcat: DEBUG
+        router:
+            static-resources:
+              default:
+                enabled: true
+                mapping: /**
+                paths: classpath:swagger
+              swagger:
+                paths: classpath:META-INF/swagger
+                mapping: /swagger/**
+              swagger-ui:
+                paths: classpath:META-INF/swagger/views/swagger-ui
+                mapping: /swagger-ui/**    
+        management:
+          endpoints:
+            web:
+              exposure:
+                include: "*" 
+            
+        jrconnection:
+               interface: INPROC
+               resource: $LIQ_HOME/dbconfig.ini
+            
+        syncoperation:
+           hostname: SERVICINGWORKERHOST
+           allocator:
+              url: http://localhost:9091/allocator           
+
+        coreapi:
+           baseurl: http://{{ HELM }}-tomcatcore:80/loaniqcoreservice/restapi # Static/compute Value respective to ENV
+           templateurl: http://{{ HELM }}-tomcatcore:80/loaniqcoreservice/asset/template # Static/compute Value respective to ENV
+           integrationurl: http://{{ HELM }}-tomcatcore:80/loaniqcoreservice/integrationapi # Static/compute Value respective to ENV
+
+        idp:
+           url: https://{{ HELM }}-dev-keycloak.11c.qa.provides.io/realms/LOANIQ_WEB/protocol/openid-connect # Static/compute Value respective to ENV
+           validatorUrl: https://{{ HELM }}-dev-keycloak.11c.qa.provides.io/realms/LOANIQ_WEB/protocol/openid-connect/certs # Static/compute Value respective to ENV
+           issuerUrl: https://{{ HELM }}-dev-keycloak.11c.qa.provides.io/realms/LOANIQ_WEB # Static/compute Value respective to ENV
+           claims: iat,jti
+           tokenValidation: true
+           clientSecret: 
+           grantType: password
+           clientId: LOANIQ_WEB
+           scope: openid
+           responseType: code
+           userName: 
+           password: 
+        externalIdp:
+           jwk_uri_value: https://{{ HELM }}-dev-keycloak.11c.qa.provides.io/realms/openapi/protocol/openid-connect/certs # Static/compute Value respective to ENV
+           issuer_uri_value: https://{{ HELM }}-dev-keycloak.11c.qa.provides.io/realms/openapi # Static/compute Value respective to ENV
+           tokenValidation: true   
+
+        ffdcIdp:
+           jwk_uri_value: https://api.lobdev.fusionfabric.cloud/login/v1/oidc/jwks.json
+           issuer_uri_value: https://api.lobdev.fusionfabric.cloud/login/v1
+           tokenValidation: Y
+        idp-b2b:
+           url: 'http://localhost:8180/realms/openapi/protocol/openid-connect'
+           clientSecret: txYY4rO810JEeVmJo3gVhqkCnGZGIEkz
+           grantType: client_credentials
+           clientId: openapi
+           forward: true
+           claimUserAttribute: tech-user
+           
+        generic:
+          cache:
+            policy:
+              expiration: 1800
+              size: 100  
+              
+        httptimeout:
+          value: 6000
+
+        async:
+          messagesystem: KAFKA
+          messageServers: blrswliqin00226:9099
+          requestQueue: async-servicing-request-queue
+          responseQueue: async-servicing-response-queue
+          
+      log4j2.xml: |
+        <?xml version="1.0" encoding="UTF-8"?>
+        <configuration packages="pl.tkowalcz.tjahzi.log4j2">
+            <Loggers>
+            <Root level="DEBUG">
+                    <AppenderRef ref="Loki"/> 
+                    <AppenderRef ref="logfile"/>
+                </Root>
+            </Loggers>
+
+            <appenders>
+                <Loki name="Loki" bufferSizeMegabytes="64">
+                    <host>loki-grafana-loki-distributor.monitoring.svc.cluster.local</host>
+                    <port>3100</port>
+
+                    <ThresholdFilter level="ALL"/>
+                    <PatternLayout>
+                        <Pattern>%X{tid} [%t] %d{MM-dd HH:mm:ss.SSS} %5p %c{1} - %m%n%exception{full}</Pattern>
+                    </PatternLayout>
+
+                    <Header name="X-Scope-OrgID" value="Finastra"/>
+                    <Label name="env_name" value="docker"/>
+                    <Label name="app_name" value="${sys:logger.appid}"/>
+
+                    <LogLevelLabel>log_level</LogLevelLabel>
+                </Loki>
+            <RollingFile name="logfile" fileName="liq_module_services/logs/${sys:logger.appid}-logFile.log" 
+                filePattern="lq_module_services/logs/${sys:logger.appid}-%d{MM-dd-yyyy}-%i.log.gz">
+                <PatternLayout>
+                    <Pattern>%d{ISO8601} [%t] {%c} %p: %m%n</Pattern>
+                </PatternLayout>
+                <Policies>
+                    <TimeBasedTriggeringPolicy />
+                    <SizeBasedTriggeringPolicy size="50MB" />
+                </Policies>
+                <DefaultRolloverStrategy max="2" />
+            </RollingFile>
+            <Console name="LogToConsole" target="SYSTEM_OUT">
+                <PatternLayout
+                    pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
+                 </Console>
+            </appenders>
+        </configuration>      
+      mf.manifest.json: |
+        {
+          "servicingModule": "https://{{ HELM }}-loaniquxp.11c.qa.provides.io/ServicingModule/ServicingModule.js", # Static/compute Value respective to ENV
+          "inquiryApplication": "https://{{ HELM }}-loaniquxp.11c.qa.provides.io/InquiryApplication/InquiryApplication.js", # Static/compute Value respective to ENV
+          "clientOnboarding": "https://{{ HELM }}-loaniquxp.11c.qa.provides.io/ClientOnboarding/ClientOnboarding.js", # Static/compute Value respective to ENV
+          "autoEnrichment": "https://{{ HELM }}-loaniquxp.11c.qa.provides.io/AutoEnrichment/AutoEnrichment.js", # Static/compute Value respective to ENV
+          "bookingService": "https://{{ HELM }}-loaniquxp.11c.qa.provides.io/biq-client/BookingService.js", # Static/compute Value respective to ENV
+          "translationApplication": "https://{{ HELM }}-loaniquxp.11c.qa.provides.io/TranslationApplication/TranslationApplication.js", # Static/compute Value respective to ENV
+          "bookingLandingModule": "https://{{ HELM }}-loaniquxp.11c.qa.provides.io/BookingLanding/BookingLandingModule.js" # Static/compute Value respective to ENV
+        }
+      booking-application.yml: |
+        spring:
+          autoconfigure:
+             exclude: org.springframework.boot.autoconfigure.jms.JmsAutoConfiguration
+          cloud:
+            compatibility-verifier:
+              enabled: false               
+          application:
+            name: biqApiService
+        management:
+          endpoints:
+            web:
+              exposure:
+                include: "*"             
+          http:
+            client:
+              read-timeout: ${READ_TIMEOUT:700}
+          server:
+            port: 8080
+            cors:
+              enabled: true
+              single-header: true
+              configurations:
+                all:
+                  allowedOrigins: ".*"
+                  allowedMethods:
+                    - DELETE
+                    - GET
+                    - HEAD
+                    - OPTIONS
+                    - POST
+                    - PUT
+                  allowedHeaders:
+                    - Origin
+                    - Content-Type
+                    - Accept
+                    - Authorization
+                  allowCredentials: false
+                  maxAge: 1209600
+          router:
+            static-resources:
+              swagger:
+                paths: classpath:META-INF/swagger
+                mapping: /swagger/**
+              swagger-ui:
+                paths: classpath:META-INF/swagger/views/swagger-ui
+                mapping: /swagger-ui/**
+        pagination:
+          limit: 5
+          offset: 0
+        middleware:
+          url: http://{{ HELM }}-bookingservice:80/booking-service/v1 # Static/compute Value respective to ENV
+          
+        translation:
+          baseurl: http://{{ HELM }}-translationservice:80/translation-service # Static/compute Value respective to ENV
+          translate: /v1/translation-mapper
+          location: /opt/misys/loaniq/server/liq_module_services/conf/
+
+        jackson:
+          serialization:
+            writeDatesAsTimestamps: false
+            fail-on-empty-beans: false
+          serialization-inclusion: ALWAYS
+        jrconnection:
+          interface: INPROC
+          resource: /opt/misys/loaniq/server/liq_module_services/conf/JSqlAccessProperties.xml
+          user: LIQ_API
+
+        generic:
+          cache:
+            policy:
+              expiration: 1800
+              size: 100
+
+        httptimeout:
+          value: 6000
+
+        syncoperation:
+          hostname: SERVICINGWORKERHOST
+          allocator:
+            url: http://localhost:8081/allocator
+
+        coreapi:
+          baseurl: http://{{ HELM }}-tomcatcore:80/loaniqcoreservice/restapi # Static/compute Value respective to ENV
+          integrationurl: http://{{ HELM }}-tomcatcore:80/loaniqcoreservice/integrationapi # Static/compute Value respective to ENV
+          defaultUserId: LIQ_API
+          partition: 2
+          
+        enrichmentDefault:
+          baseurl: http://{{ HELM }}-enrichmentdefault:80/enrichment-default/v1/enrichment-default # Static/compute Value respective to ENV
+          max_retries: 2
+
+        idp:
+          url: https://{{ HELM }}-dev-keycloak.11c.qa.provides.io/auth/realms/BookingIQ/protocol/openid-connect # Static/compute Value respective to ENV
+          validatorUrl: https://{{ HELM }}-dev-keycloak.11c.qa.provides.io/auth/realms/BookingIQ/protocol/openid-connect/certs # Static/compute Value respective to ENV
+          issuerUrl: https://{{ HELM }}-dev-keycloak.11c.qa.provides.io/auth/realms/BookingIQ # Static/compute Value respective to ENV
+          claims: iat,jti
+          tokenValidation: Y 
+          username: preferred_username
+          jwtOptional: 'N'
+          enable: 'Y'
+          user_name: ''
+          password: ''
+          clientId: 'Fusion_BIQ'
+          secret: ''
+          tokenEndpoint: 'https://{{ HELM }}-dev-keycloak.11c.qa.provides.io/auth/realms/BookingIQ/protocol/openid-connect/token' # Static/compute Value respective to ENV
+          scope: 'openid'
+          grantType: 'client_credentials'
+          userName : TRUSER26
+          b2bClaimKey: b2bClaimKey
+          b2bClaimValue: b2b
+          clientSecret : abc
+          responseType : responseType
+          ffdcValidatorUrl : ffdcValidatorUrl
+          claimUserAttribute: tech-user
+          
+        ffdcIdp:
+          jwk_uri_value: jwk_uri_value
+          issuer_uri_value: issuer_uri_value
+          
+        scheduledjob:
+          initialize:
+            fixedDelay: 50
+            initialDelay: 10
+          outstandingStatus:
+            fixedDelay: 10000
+            initialDelay: 5000
+          asyncProcess:
+            enable: true
+            fixedDelay: 30
+            initialDelay: 40
+          syncProcess:
+            enable: true
+            fixedDelay: 30
+            initialDelay: 20
+          executeWorkflows:
+            fixedDelay: 10
+            initialDelay: 30
+          executeCustomerWorkflows:
+            fixedDelay: 10
+            initialDelay: 30
+          asyncCustomerProcess:
+            enable: true
+            fixedDelay: 30
+            initialDelay: 10    
+
+        mapping:
+          customerMapping: customerId
+          
+        onboarding:
+          riskBook: LEND
+
+        openapi:
+          appIdClaim: azp
+          defaultAppId: GENERIC_LOS
+          enableLOSRestriction: false
+         
+        async:
+          messagesystem: MQ
+          requestQueue: async-bks-request-queue
+          responseQueue: async-default-queue,BOOKING_OPENAPI:async-bksopenapi-response-queue,BOOKING_SERVICE:async-bks-response-queue
+          jmsProviderURL: tcp://{{ HELM }}-activemq:61616 # Static/compute Value respective to ENV
+          jndiSettingsPath: /usr/local/customconf/jrconf/jndi.properties
+          JNDIContextType: GEN
+          JMSQueueConnectionFactory: QueueConnectionFactory
+          
+      booking-log4j2.xml: |
+        <?xml version="1.0" encoding="UTF-8"?>
+        <Configuration status="TRACE">
+            <Appenders>
+                <RollingFile name="logfile" fileName="logs/${sys:logger.appid}-logFile.log" 
+                    filePattern="logs/LoanIQ-%d{MM-dd-yyyy}-%i.log.gz">
+                    <PatternLayout>
+                        <Pattern>%d{ISO8601} [%t] {%c} %p: %m%n</Pattern>
+                    </PatternLayout>
+                    <Policies>
+                        <TimeBasedTriggeringPolicy />
+                        <SizeBasedTriggeringPolicy size="50MB" />
+                    </Policies>
+                    <DefaultRolloverStrategy max="2" />
+                </RollingFile>
+                <Console name="LogToConsole" target="SYSTEM_OUT">
+                    <PatternLayout
+                        pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
+                </Console>
+                
+                <Loki name="Loki" bufferSizeMegabytes="64">
+                    <host>loki-grafana-loki-distributor.monitoring.svc.cluster.local</host>
+                    <port>3100</port>
+
+                    <ThresholdFilter level="ALL"/>
+                    <PatternLayout>
+                        <Pattern>%d{ISO8601} [%t] {%c} %p: %m%n</Pattern>
+                    </PatternLayout>
+
+                    <Header name="X-Scope-OrgID" value="Finastra"/>
+                    <Label name="namespace" value="liqdev"/>
+                    <Label name="app_name" value="${sys:logger.appid}"/>
+
+                    <LogLevelLabel>log_level</LogLevelLabel>
+                </Loki>
+
+
+            </Appenders>
+            <Loggers>
+                <Root level="ALL">
+                    <AppenderRef ref="logfile" />			
+                    <AppenderRef ref="Loki"/>
+                </Root>
+            </Loggers>
+        </Configuration>
+        
+      template-admin-log4j2-xml: |
+        <?xml version="1.0" encoding="UTF-8"?>
+        <Configuration status="DEBUG">
+            <Appenders>
+                <RollingFile name="logfile" fileName="C:/Projects/7652/liqjava/liq_module_services/logs/treasury-logFile.log" 
+                    filePattern="C:/Projects/7652/liqjava/liq_module_services/logs/LoanIQ-%d{MM-dd-yyyy}-%i.log.gz">
+                    <PatternLayout>
+                        <Pattern>%d{ISO8601} [%t] {%c} %p: %m%n</Pattern>
+                    </PatternLayout>
+                    <Policies>
+                        <TimeBasedTriggeringPolicy />
+                        <SizeBasedTriggeringPolicy size="50MB" />
+                    </Policies>
+                    <DefaultRolloverStrategy max="2" />
+                </RollingFile>
+                <Console name="LogToConsole" target="SYSTEM_OUT">
+                    <PatternLayout
+                        pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
+                </Console>
+            </Appenders>
+            <Loggers>
+                <Root level="ALL">
+                    <AppenderRef ref="logfile" />
+                </Root>
+            </Loggers>
+        </Configuration>
+      treasury-api-application-yml: |
+        spring:
+            application:
+                name: APITreasury
+            scheduling:
+                enabled: true
+            sleuth:
+                enabled: true
+                sampler:
+                   probability: 1
+            zipkin:
+              base-url: http://blrswliqin00226:9411/
+              enabled:   true
+        server:
+              port: 9093
+              tomcat:
+                accesslog:
+                 directory: C:\commontomcat
+                 enabled: true
+                 file-date-format: yyyy-MM-dd
+                 prefix: access_log
+                 suffix: .log
+        logging:
+            level:
+                root: INFO
+                org.apache.tomcat: INFO
+        router:
+              static-resources:
+                    default:
+                        enabled: true
+                        mapping: /**
+                        paths: classpath:swagger
+                    swagger:
+                        paths: classpath:META-INF/swagger
+                        mapping: /swagger/**
+                    swagger-ui:
+                        paths: classpath:META-INF/swagger/views/swagger-ui
+                        mapping: /swagger-ui/**
+        management:
+          endpoints:
+            web:
+              exposure:
+                include: "*"
+        jrconnection:
+               interface: INPROC
+               resource: $LIQ_HOME/liq_module_services/conf/JSqlAccessProperties.xml
+        syncoperation:
+           hostname: SERVICINGWORKERHOST
+           allocator:
+              url: http://localhost:8081/allocator  
+         
+        coreapi:
+           baseurl: http://{{ HELM }}-tomcatcore:80/loaniqcoreservice/restapi # Static/compute Value respective to ENV
+        idp:
+           url: https://{{ HELM }}-dev-keycloak.11c.qa.provides.io/auth/realms/BookingIQ/protocol/openid-connect # Static/compute Value respective to ENV
+           validatorUrl: https://{{ HELM }}-dev-keycloak.11c.qa.provides.io/auth/realms/BookingIQ/protocol/openid-connect/certs # Static/compute Value respective to ENV
+           issuerUrl: https://{{ HELM }}-dev-keycloak.11c.qa.provides.io/auth/realms/BookingIQ # Static/compute Value respective to ENV
+           claims: iat,jti
+           tokenValidation: N
+           clientSecret: 73c1f7e1-3549-4398-a095-9d70102e53c9
+           grantType: password
+           clientId: Fusion_BIQ
+           scope: openid
+           responseType: code
+           userName: 
+           password: 
+           ffdcTokenRequired: Y
+           tokenNotRequired: N
+        ffdcIdp:
+           jwk_uri_value: https://api.lobdev.fusionfabric.cloud/login/v1/oidc/jwks.json
+           issuer_uri_value: https://api.lobdev.fusionfabric.cloud/login/v1
+           tokenValidation: Y
+        generic:
+         cache:
+            policy:
+              expiration: 1800
+              size: 100 
+              
+        httptimeout:
+          value: 60000  
+          
+        async:
+          messagesystem: KAFKA
+          messageServers: blrswliqin00226:9099
+          requestQueue: async-servicing-request-queue
+          responseQueue: async-servicing-response-queue
+          
+      application.properties: |
+        server.port=8073
+        server.servlet.context-path=/loaniq
+        spring.profiles.active=prod
+
+        spring.main.allow-bean-definition-overriding=true
+        spring.main.allow-circular-references=true
+        spring.mvc.pathmatch.matching-strategy = ANT_PATH_MATCHER
+        #spring.profiles.active=dev
+        #spring.security.user.name=openapiuser
+        #spring.security.user.password=
+        #spring.security.user.role=
+
+        logging.file = logs/openapi.log
+        defaulturi = http://{{ HELM }}-apiserver:80/liq_apiWebService # Static/compute Value respective to ENV
+        contextpath = com.liq.restservice.generated
+        wsdl.uri = http://{{ HELM }}-apiserver:80/liq_apiWebService?wsdl # Static/compute Value respective to ENV
+        filterIP=10.*
+
+        # Connection Timeout configuration in miliseconds for WS request. For example, the request getAllUserProfiles can take several minutes
+        ws.readtimeout = 120000
+        ws.connectionTimeout = 120000
+
+        defaultpageoffset = 25
+        pagemaxlimit = 100 
+
+        logging.level.org.springframework.web=DEBUG
+        logging.level.org.springframework.ws.client.MessageTracing.sent=DEBUG
+        logging.level.org.springframework.ws.server.MessageTracing.sent=DEBUG
+        logging.level.org.springframework.ws.client.MessageTracing.received=TRACE
+        logging.level.org.springframework.ws.server.MessageTracing.received=TRACE
+        
+      log4cxx.xml: |
+        <?xml version="1.0" encoding="UTF-8" ?>
+        <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+          <appender name="ConsoleAppender" class="org.apache.log4j.ConsoleAppender">
+            <param name="Target" value="System.out"/>
+            <layout class="org.apache.log4j.PatternLayout">
+              <param name="ConversionPattern" value="[%d{yyyy-MM-dd HH:mm:ss}] %c %-5p - %m%n"/>
+            </layout>
+          </appender>
+          <appender name="FileAppender" class="org.apache.log4j.FileAppender">
+            <param name="file" value="loaniqcpp.log" />
+            <layout class="org.apache.log4j.PatternLayout">
+              <param name="ConversionPattern" value="[%d{yyyy-MM-dd HH:mm:ss}] %c %-5p - %m%n" />
+            </layout>
+          </appender>
+         <appender name="LokiPushAppender" class="LokiPushAppender">    
+                 <param name="RemoteHost" value="loki-grafana-loki-distributor.monitoring.svc.cluster.local"/>
+                <param name="Port" value="3100" />
+                <param name="namespace" value="liqdev" />
+                <param name="application" value="loaniqbatch" />
+                <layout class="org.apache.log4j.PatternLayout">
+                   <param name="ConversionPattern" value="[%d{yyyy-MM-dd HH:mm:ss}] %c %-5p - %m" /> 
+            </layout>
+          </appender>
+          <root>
+             <priority value="ALL" />
+             <appender-ref ref="LokiPushAppender"/>
+             <appender-ref ref="FileAppender"/>
+          </root>
+        </log4j:configuration>
+      
+      LoanIQUXP-application.yml: |
+        server:
+          port: 4200
+          use-forward-headers: true
+        # Used for HTTPS configuration
+        #  servlet:
+        #    session:
+        #     cookie:
+        #       domain: Finastra.global
+        #       secure: true
+
+        # OPENID configuration for OAUTH authentication Mechanism
+        spring:
+          security:
+            oauth2:
+              client:
+                provider:
+                  LOANIQ_WEB:
+                    issuer-uri: https://{{ HELM }}-dev-keycloak.11c.qa.provides.io/realms/LOANIQ_WEB # Static/compute Value respective to ENV
+                registration:
+                  LOANIQ_WEB:
+                    provider: LOANIQ_WEB
+                    client-name: LOANIQ_WEB
+                    client-id: LOANIQ_WEB
+                    client-secret: 
+                    scope: openid
+                    authorization-grant-type: authorization_code
+
+        # Static html code to be served, provide file location to access
+          thymeleaf:
+            prefix: file:/opt/misys/loaniq/server/LoanIQ_Web/dist/UXP_WebPortal/
+
+        #file:C:\POC\LoanIQUXP\static_backup\UXP_WebPortal\
+
+
+        # ServiceId Configuration for API, should match with UI Service Id
+
+        services:
+          serverURLs:
+            inquiryService: http://{{ HELM }}-inquiryservice:80/ # Static/compute Value respective to ENV
+            SimplifiedServicingService: http://{{ HELM }}-servicing:80/ # Static/compute Value respective to ENV
+            commonService: http://{{ HELM }}-commonservice:80/ # Static/compute Value respective to ENV
+            TEMPLATEAPIService: http://{{ HELM }}-templateadmin:80/liq-template-admin/ # Static/compute Value respective to ENV
+
+
+        # Auth type OPENID (openidconnect) or Local (locallogin)
+        # Local Auth user & user hash for password
+        auth:
+            type: openidconnect
+            users: admin,mohjasim,truser26
+            userhash: adf1f1142d437fae065fb2ce67bfa578
+
+        # Error page path
+        error:
+          path: /error
+
+      LoanIQUXP-log4j2.xml: |
+        <?xml version="1.0" encoding="UTF-8"?>
+        <Configuration status="DEBUG">
+                <Appenders>
+                        <RollingFile name="logfile" fileName="logs/LoanIQUXP-logFile.log"
+                                filePattern="logs/LoanIQUXP-%d{MM-dd-yyyy}-%i.log.gz">
+                                <PatternLayout>
+                                        <Pattern>%d{ISO8601} [%t] {%c} %p: %m%n</Pattern>
+                                </PatternLayout>
+                                <Policies>
+                                        <TimeBasedTriggeringPolicy />
+                                        <SizeBasedTriggeringPolicy size="50MB" />
+                                </Policies>
+                                <DefaultRolloverStrategy max="2" />
+                        </RollingFile>
+                        <Console name="LogToConsole" target="SYSTEM_OUT">
+                                <PatternLayout
+                                        pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
+                        </Console>
+                </Appenders>
+                <Loggers>
+                        <Root level="ALL">
+                                <AppenderRef ref="logfile" />
+                        </Root>
+                </Loggers>
+        </Configuration>
+      transact-application.yml: |
+        <Content to be placed>
+      transact-log4j2.xml: |
+        <Content to be placed>
+#########################################################
